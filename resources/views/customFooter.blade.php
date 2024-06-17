@@ -15,6 +15,7 @@
         <a href="#" class="hover:underline">Kuda Site™</a>. All Rights Reserved.
     </span>
     <div class="flex">
+        <img alt="IXCEO logo" src="{{ url('assets/ixceo.jpg') }}" style="width: 50px;" class="fi-logo justify-self-end p-1">
         <img alt="officeninja logo" src="{{ url('assets/logo.jpg') }}" style="width: 50px;" class="fi-logo justify-self-end p-1">
 
     </div>
