@@ -1,10 +1,9 @@
 <?php
 
-namespace App\Filament\Resources\SlotResource\RelationManagers;
+namespace App\Filament\Rider\Resources\SlotResource\RelationManagers;
 
 use Closure;
 use Filament\Forms;
-use App\Models\Slot;
 use Filament\Tables;
 use App\Models\Coach;
 use App\Models\Horse;
@@ -22,7 +21,6 @@ use Filament\Resources\RelationManagers\RelationManager;
 class SlotHorseRelationManager extends RelationManager
 {
     protected static string $relationship = 'slot_horse';
-    protected static ?string $title = 'Details';
 
     public function attachForm()
     {
@@ -39,7 +37,7 @@ class SlotHorseRelationManager extends RelationManager
                     //     ->orWhere('id', $state)->get()->pluck('name', 'id');
                     //     return $horse;
                     // })
-                    ->disableOptionWhen(function (RelationManager $livewire,string $value, Get $get, string $operation, ?string $state,$record): bool {
+                    ->disableOptionWhen(function (RelationManager $livewire,string $value, Get $get, string $operation, ?string $state, $record): bool {
                         $available =  Horse::whereDoesntHave('slots', function($q) use($livewire) {
                                     $q->where('slots.id', $livewire->getOwnerRecord()->id);
                                 })->pluck('id')->toArray();
@@ -50,7 +48,7 @@ class SlotHorseRelationManager extends RelationManager
                         return !in_array($value, $available);
                     })
                     ->rules([
-                        fn (RelationManager $livewire,Get $get, string $operation, ?string $state,$record): Closure => function (string $attribute, $value, Closure $fail) use($get, $operation,$state, $livewire,$record) {
+                        fn (RelationManager $livewire,Get $get, string $operation, ?string $state, $record): Closure => function (string $attribute, $value, Closure $fail) use($get, $operation,$state, $livewire, $record) {
                             $available =  Horse::whereDoesntHave('slots', function($q) use($livewire) {
                                 $q->where('slots.id', $livewire->getOwnerRecord()->id);
                             })->pluck('id')->toArray();
@@ -69,12 +67,13 @@ class SlotHorseRelationManager extends RelationManager
                     ])
                     ->searchable()
                     ->preload()
-                    // ->disabled(fn($operation) => $operation == 'edit')
+                    ->disabled(fn($operation) => $operation == 'edit')
                     ->required(),
                 Forms\Components\Select::make('coach_id')
                     ->label('Coach')   
                     ->relationship(name: 'coach', titleAttribute: 'name') 
-                    ->disableOptionWhen(function (RelationManager $livewire,string $value, Get $get, string $operation, ?string $state,$record): bool {
+                    ->disableOptionWhen(function (RelationManager $livewire,string $value, Get $get, string $operation, ?string $state, $record): bool {
+
                         $available =  Coach::whereDoesntHave('slots', function($q) use($livewire) {
                                     $q->where('slots.id', $livewire->getOwnerRecord()->id);
                                 })->pluck('id')->toArray();
@@ -84,12 +83,12 @@ class SlotHorseRelationManager extends RelationManager
                         return !in_array($value, $available);
                     })
                     ->rules([
-                        fn (RelationManager $livewire,Get $get, string $operation, ?string $state,$record): Closure => function (string $attribute, $value, Closure $fail) use($get, $operation,$state, $livewire,$record) {
+                        fn (RelationManager $livewire,Get $get, string $operation, ?string $state,$record): Closure => function (string $attribute, $value, Closure $fail) use($get, $operation,$state, $livewire, $record) {
                             $available =  Coach::whereDoesntHave('slots', function($q) use($livewire) {
                                 $q->where('slots.id', $livewire->getOwnerRecord()->id);
                             })->pluck('id')->toArray();
                             if($operation == 'edit'){
-                                if(!in_array($value, $available) && $value !=  $record->coach_id){
+                                if(!in_array($value, $available) && $value != $record->coach_id){
                                     $fail('The :attribute is not available.');
                                 };
                             }else{
@@ -101,11 +100,16 @@ class SlotHorseRelationManager extends RelationManager
                         
                         },
                     ])
+                    ->disabled(fn($operation) => $operation == 'edit')
                     ->searchable()
                     ->preload(),
                 Forms\Components\Select::make('rider_id')
                     ->label('Rider')  
-                    ->relationship(name: 'rider', titleAttribute: 'name') 
+                    ->relationship(name: 'rider', titleAttribute: 'name')  
+                    ->options(function(RelationManager $livewire, $state) {
+                        $rider = Rider::where('user_id', auth()->user()->id)->pluck('name', 'id');
+                        return $rider;
+                    })
                     ->disableOptionWhen(function (RelationManager $livewire,string $value, Get $get, string $operation, ?string $state, $record): bool {
                         $available =  collect(DB::select("SELECT a.id, a.name
                              FROM riders a
@@ -115,11 +119,11 @@ class SlotHorseRelationManager extends RelationManager
                                  ELSE rider_id
                                  END
                                  rider_id from slot_horse WHERE slot_id = ?
-                             ) OR a.id = ?", [$livewire->getOwnerRecord()->id,  $record->rider_id]))->pluck('id')->toArray();
+                             ) OR a.id = ?", [$livewire->getOwnerRecord()->id, $state]))->pluck('id')->toArray();
 
 
                         if($operation == 'edit'){
-                            return !in_array($value, $available) && $value !=  $record->rider_id;
+                            return !in_array($value, $available) && $value != $record->rider_id;
                         }
                         return !in_array($value, $available);
                     })
@@ -149,12 +153,14 @@ class SlotHorseRelationManager extends RelationManager
                         
                         },
                     ])
+                  
                     ->searchable()
                     ->preload(),
                 ]);
         
     }
 
+   
     public function table(Table $table): Table
     {
         return $table
@@ -171,31 +177,32 @@ class SlotHorseRelationManager extends RelationManager
                 //
             ])
             ->headerActions([
-                Tables\Actions\Action::make('attach')
-                    ->label('Attach Horse') 
-                    ->form([
-                        $this->attachForm(),
-                    ])
-                    ->action(function (RelationManager $livewire, $data) {
-                        $slot_horse = SlotHorse::create([
-                            'slot_id' => $livewire->ownerRecord->id,
-                            'horse_id' => $data['horse_id'],
-                            'coach_id' => $data['coach_id'],
-                            'rider_id' => $data['rider_id'],
-                        ]);
+                // Tables\Actions\Action::make('attach')
+                //     ->label('Attach Horse') 
+                //     ->form([
+                //         $this->attachForm(),
+                //     ])
+                //     ->action(function (RelationManager $livewire, $data) {
+                //         $slot_horse = SlotHorse::create([
+                //             'slot_id' => $livewire->ownerRecord->id,
+                //             'horse_id' => $data['horse_id'],
+                //             'coach_id' => $data['coach_id'],
+                //             'rider_id' => $data['rider_id'],
+                //         ]);
 
-                        Notification::make()
-                        ->title('Created successfully')
-                        ->success()
-                        ->send();
+                //         Notification::make()
+                //         ->title('Created successfully')
+                //         ->success()
+                //         ->send();
 
-                        // $slot = Slot::find($livewire->ownerRecord->id) ;
-                        // $slot->horses()->attach($data['horse_id'], ['coach_id' => $data['coach_id'], 'rider_id' => $data['rider_id']]);
-                    }),
+                //         // $slot = Slot::find($livewire->ownerRecord->id) ;
+                //         // $slot->horses()->attach($data['horse_id'], ['coach_id' => $data['coach_id'], 'rider_id' => $data['rider_id']]);
+                //     }),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
                 ->label('Edit')
+                ->visible(fn($record) => $record->rider_id == auth()->user()->rider?->id || $record->rider_id == null)
                 ->form([
                     $this->attachForm(),
                 ])
@@ -203,10 +210,7 @@ class SlotHorseRelationManager extends RelationManager
 
                     $slot_horse = SlotHorse::where('id', $record->id)
                     ->update([
-                        'slot_id' => $livewire->ownerRecord->id,
-                        'horse_id' => $data['horse_id'],
                         'coach_id' => $data['coach_id'],
-                        'rider_id' => $data['rider_id'],
                     ]);
 
                     Notification::make()
@@ -217,11 +221,11 @@ class SlotHorseRelationManager extends RelationManager
 
 
                 }),
-                Tables\Actions\DeleteAction::make(),
+                // Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }

@@ -14,22 +14,22 @@ class SlotHorse extends Model
     
     public function slots()
     {
-        return $this->belongsTo(Slot::class);
+        return $this->belongsTo(Slot::class, 'slot_id', 'id');
     }
 
     public function horse()
     {
-        return $this->belongsTo(Horse::class);
+        return $this->belongsTo(Horse::class, 'horse_id', 'id');
     }
 
     public function coach()
     {
-        return $this->belongsTo(Coach::class);
+        return $this->belongsTo(Coach::class, 'coach_id', 'id');
     }
 
     public function rider()
     {
-        return $this->belongsTo(Rider::class);
+        return $this->belongsTo(Rider::class, 'rider_id', 'id');
     }
 
 

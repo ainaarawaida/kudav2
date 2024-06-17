@@ -20,6 +20,9 @@ class EditSlot extends EditRecord
                 }),
             Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
+            Actions\Action::make('Back')
+            ->url(url()->previous())
+            ->color('gray'),
         ];
     }
 }
