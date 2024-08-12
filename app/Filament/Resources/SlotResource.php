@@ -165,7 +165,7 @@ class SlotResource extends Resource
                             ->indicator('Rider'),
 
                 
-            ], layout: FiltersLayout::AboveContent)
+            ], layout: FiltersLayout::AboveContentCollapsible)
             ->actions([
                 Tables\Actions\ActionGroup::make([
                     Tables\Actions\ForceDeleteAction::make()

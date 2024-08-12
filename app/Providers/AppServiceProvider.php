@@ -6,6 +6,8 @@ use Filament\Pages\Dashboard;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\ServiceProvider;
 use Filament\Support\Facades\FilamentView;
+use Filament\Http\Responses\Auth\Contracts\LoginResponse;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +34,11 @@ class AppServiceProvider extends ServiceProvider
             scopes: [
                 Dashboard::class,
             ]
+        );
+
+        $this->app->singleton(
+            LoginResponse::class,
+            \App\Http\Responses\Auth\LoginResponse::class
         );
 
         // FilamentView::registerRenderHook(
@@ -67,7 +74,8 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         if($this->app->environment('production')) {
-            URL::forceScheme('https');
+            // URL::forceScheme('https');
+            $this->app['request']->server->set('HTTPS', true);
         }
     }
 }

@@ -115,11 +115,11 @@ class SlotHorseRelationManager extends RelationManager
                                  ELSE rider_id
                                  END
                                  rider_id from slot_horse WHERE slot_id = ?
-                             ) OR a.id = ?", [$livewire->getOwnerRecord()->id,  $record->rider_id]))->pluck('id')->toArray();
+                             ) OR a.id = ?", [$livewire->getOwnerRecord()->id,  $record?->rider_id]))->pluck('id')->toArray();
 
 
                         if($operation == 'edit'){
-                            return !in_array($value, $available) && $value !=  $record->rider_id;
+                            return !in_array($value, $available) && $value !=  $record?->rider_id;
                         }
                         return !in_array($value, $available);
                     })
@@ -133,11 +133,11 @@ class SlotHorseRelationManager extends RelationManager
                                  ELSE rider_id
                                  END
                                  rider_id from slot_horse WHERE slot_id = ?
-                             ) OR a.id = ?", [$livewire->getOwnerRecord()->id, $record->rider_id]))->pluck('id')->toArray();
+                             ) OR a.id = ?", [$livewire->getOwnerRecord()->id, $record?->rider_id]))->pluck('id')->toArray();
 
 
                             if($operation == 'edit'){
-                                if(!in_array($value, $available) && $value != $record->rider_id){
+                                if(!in_array($value, $available) && $value != $record?->rider_id){
                                     $fail('The :attribute is not available.');
                                 };
                             }else{
